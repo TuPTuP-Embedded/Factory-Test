@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#eef1f5">
+<meta name="mobile-web-app-capable" content="yes">
+<title>星海弹弹键盘产品测试工具</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header id="topbar">
+  <div class="brand">星海弹弹<span>键盘产品测试工具</span></div>
+  <div class="conn">
+    <select id="connType" class="conn-type" aria-label="连接方式">
+      <option value="ble">蓝牙 BLE</option>
+      <option value="usb">USB MIDI</option>
+    </select>
+    <span id="statusDot" class="dot off"></span>
+    <span id="statusText">未连接</span>
+    <button id="btnConnect" class="primary">连接</button>
+    <button id="btnDisconnect" class="ghost" hidden>断开</button>
+  </div>
+</header>
+
+<nav id="tabs">
+  <button data-tab="keys" class="active">键盘 / 灯光</button>
+  <button data-tab="fw">固件升级</button>
+</nav>
+
+<main>
+  <section id="tab-keys" class="tab active">
+    <label class="chk bar"><input type="checkbox" id="showAllDevices"> 显示全部蓝牙设备（找不到设备时勾选）</label>
+
+    <div class="rowbar">
+      <label class="fld"><span>模式</span>
+        <select id="keyMode">
+          <option value="note">音符 Note On/Off</option>
+          <option value="light">灯光 开/关</option>
+          <option value="check">检验（按键点亮）</option>
+        </select>
+      </label>
+      <label class="fld note-opts"><span>通道</span>
+        <select id="keyChannel">
+          <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+          <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+          <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+          <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+          <option value="13">13</option><option value="14">14</option><option value="15">15</option>
+          <option value="16">16</option>
+        </select>
+      </label>
+      <label class="fld note-opts"><span>力度</span>
+        <input type="range" id="keyVelocity" min="1" max="127" value="100">
+        <output id="keyVelocityVal">100</output>
+      </label>
+      <label class="fld light-opts" style="display:none"><span>颜色</span>
+        <select id="keyColor"></select>
+      </label>
+      <label class="fld check-opts" style="display:none"><span>进度</span>
+        <output id="checkProgress">已收到 0 / 88</output>
+      </label>
+    </div>
+
+    <div class="keyboard-scroll">
+      <div id="keyboard" class="keyboard"></div>
+    </div>
+
+    <div class="rowbar">
+      <button id="btnAllLightsOff" class="ghost">全部熄灭</button>
+      <button id="btnLightRed" class="ghost light-all">全部亮红</button>
+      <button id="btnLightGreen" class="ghost light-all">全部亮绿</button>
+      <button id="btnLightBlue" class="ghost light-all">全部亮蓝</button>
+      <button id="btnAllNotesOff" class="ghost">All Notes Off</button>
+      <button id="btnResetCheck" class="ghost">重置检验</button>
+    </div>
+
+    <p class="hint">
+      按住琴键：音符模式发 Note On / 松开发 Note Off；灯光模式按下点亮、松开熄灭。<br>
+      <b>检验</b>：88 键全灰，收到设备按键后变绿，集齐后大字显示 <b>PASS</b>（进入时自动全屏横屏）。<br>
+      顶部可切换 <b>蓝牙 BLE / USB MIDI</b>；USB 需 OTG 转接线（Android Chrome / Edge）。<br>
+      空格 = 紧急停止（All Notes Off + 全部熄灭）。
+    </p>
+  </section>
+
+  <section id="tab-fw" class="tab">
+    <div class="fw-banner">⚠ 固件升级只支持<b>蓝牙 BLE</b>连接；升级中请勿切到后台、锁屏或断电。</div>
+
+    <div id="fwDrop" class="fw-drop">
+      <div class="fw-drop-title">选择或拖入升级文件</div>
+      <div class="hint">支持 <code>.ble</code> 升级包，或 <code>.BIN</code>（本页按块大小自动打包）</div>
+      <label class="ghost filebtn">选择文件<input type="file" id="fwFile" accept=".ble,.bin" hidden></label>
+      <div id="fwFileName" class="fw-filename">未选择文件</div>
+    </div>
+
+    <div id="fwBinBox" class="fw-bin-box" hidden>
+      <div class="rowbar">
+        <label class="fld"><span>升级对象</span>
+          <select id="fwTarget">
+            <option value="APP_">主板程序 APP_</option>
+            <option value="KEY_">琴键板程序 KEY_</option>
+            <option value="RES_">字库 RES_</option>
+            <option value="IMG_">图片 IMG_</option>
+            <option value="MID_">伴奏曲库 MID_</option>
+          </select>
+        </label>
+        <label class="fld"><span>版本号</span>
+          <input type="number" id="fwVersion" min="1" max="999" step="1" placeholder="如 101">
+        </label>
+      </div>
+      <div class="rowbar">
+        <label class="fld"><span>文件名</span>
+          <input type="text" id="fwBinName" class="mono" readonly>
+        </label>
+      </div>
+      <div id="fwBinWarn" class="hint"></div>
+    </div>
+
+    <div class="rowbar">
+      <label class="fld"><span>打包块大小</span>
+        <select id="fwBlock">
+          <option value="512">512（默认）</option>
+          <option value="256">256</option>
+          <option value="128">128</option>
+          <option value="64">64</option>
+        </select>
+      </label>
+      <button id="btnFwDownload" class="ghost" disabled>下载 .ble</button>
+    </div>
+
+    <div id="fwInfo" class="fw-info">未选择升级文件</div>
+
+    <div class="rowbar">
+      <button id="btnFwStart" class="primary" disabled>开始升级</button>
+      <button id="btnFwStop" class="ghost" disabled>停止</button>
+      <span id="fwStatus" class="fw-status">未选择升级文件</span>
+    </div>
+
+    <div class="fw-progress"><div id="fwBar"></div></div>
+    <div class="rowbar"><span id="fwStats" class="hint"></span></div>
+
+    <details class="fw-adv">
+      <summary>高级设置</summary>
+      <div class="rowbar">
+        <label class="fld"><span>发送包长</span>
+          <select id="fwPacket">
+            <option value="0">自动（20 字节，与 PC 工具一致）</option>
+            <option value="100">100</option>
+            <option value="244">244</option>
+            <option value="512">512（需蓝牙模块支持）</option>
+          </select>
+        </label>
+        <label class="fld"><span>包间隔</span>
+          <select id="fwGap">
+            <option value="0">0 ms（默认，最快）</option>
+            <option value="5">5 ms</option>
+            <option value="10">10 ms</option>
+            <option value="20">20 ms</option>
+            <option value="50">50 ms（最稳）</option>
+          </select>
+        </label>
+        <label class="chk"><input type="checkbox" id="fwWithResp"> 写入带确认（更慢但最稳）</label>
+        <label class="chk"><input type="checkbox" id="fwVerbose"> 详细日志（逐帧）</label>
+      </div>
+    </details>
+
+    <p class="hint">
+      升级包可由固件组用 <code>ble_pack.py</code> 生成；也可以直接选 <code>.BIN</code>：带 16 字节头的文件按原样打包，
+      Keil 编出的<b>原始程序</b>（没有 16 字节头）会按 <code>iap_pack.py</code> 规则自动加头，版本号需自己填写。<br>
+      流程：选文件 → 开始升级 → 确认弹窗 → 琴回「稍等」后自动重启进入升级模式（约 1 秒）→ 逐帧传输 → 完成后琴自行安装。一个文件对应一次升级。<br>
+      如果进度一直停在 0%、反复重发同一帧，说明蓝牙这一路传不了这么大的帧，请用 <b>128 / 256</b> 块大小重新打包后再试。<br>
+      <b>错误码 13（琴写入失败）</b>：把「高级设置 → 包间隔」调到 20 / 50 ms，或勾选「写入带确认」再试；仍失败请先给琴断电重启。<br>
+      错误码：10 文件格式不对 · 11 文件名不对 · 12 空间不足 · 13 写入失败 · 14 文件校验失败。
+    </p>
+  </section>
+</main>
+
+<section id="logPanel" class="collapsed">
+  <div class="logHead">
+    <button id="logToggle" class="logtoggle">日志</button>
+    <span id="logStats">收 0 / 发 0</span>
+    <button id="logClear" class="ghost">清空</button>
+  </div>
+  <div id="logBody"></div>
+</section>
+
+<div id="usbPick" class="usb-pick" hidden>
+  <div class="usb-pick-box">
+    <div class="usb-pick-title">选择 USB MIDI 设备</div>
+    <div id="usbPickList"></div>
+    <button id="usbPickCancel" class="ghost">取消</button>
+  </div>
+</div>
+
+<div id="fwConfirm" class="modal" hidden>
+  <div class="modal-box">
+    <div class="modal-title">确认固件升级</div>
+    <div id="fwConfirmInfo" class="fw-confirm-info"></div>
+    <p class="hint">升级过程中请勿切换后台、锁屏、拔线或断电。琴会自动重启进入升级模式，属正常现象。</p>
+    <div class="rowbar">
+      <button id="fwConfirmCancel" class="ghost">取消</button>
+      <button id="fwConfirmOk" class="primary">确认升级</button>
+    </div>
+  </div>
+</div>
+
+<div id="passOverlay"><span>PASS</span></div>
+<div id="toast"></div>
+
+<script src="js/native-bridge.js"></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

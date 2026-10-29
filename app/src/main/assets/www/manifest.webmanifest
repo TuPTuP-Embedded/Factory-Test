@@ -1,0 +1,13 @@
+{
+  "name": "星海弹弹键盘产品测试工具",
+  "short_name": "TP-01 测试",
+  "description": "星海弹弹 TP-01 键盘 / 灯光 / 固件升级 测试工具",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#eef1f5",
+  "theme_color": "#eef1f5",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
